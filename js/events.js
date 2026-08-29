@@ -6,6 +6,7 @@
 
 import { api, apiRequest } from './api.js';
 import { DOM, openImageModal, closeImageModal } from './dom.js';
+import { decorateMenuButtons } from './icons.js';
 import { getCurrentUser, getCurrentTimelineTab, getActiveDmId } from './state.js';
 import { router } from './router.js';
 import { clearRealtimeTimelineUpdate } from './modules/cache.js';
@@ -355,6 +356,7 @@ function handleGlobalClick(e) {
                 ?.querySelector('.post-menu');
         }
         if (menuToToggle) {
+            decorateMenuButtons(menuToToggle);
             const isCurrentlyVisible = menuToToggle.classList.contains('is-visible');
             document.querySelectorAll('.post-menu.is-visible').forEach((m) => {
                 m.classList.remove('is-visible');
@@ -542,7 +544,7 @@ function handleGlobalClick(e) {
             return;
         }
 
-        // インタラクティブな要素（リンク、ボタン、添付ファイル、メニュー等）以外をクリックした場合は
+        // インタラクティブな要素以外をクリックした場合は
         // 詳細画面へ遷移
         const isInteractive = Boolean(
             target.closest('a') ||
