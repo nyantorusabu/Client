@@ -4,7 +4,7 @@
   "manufacturer": "Nyaitter",
   "author": "NyaitterTeam",
   "creator": "NyaitterTeam",
-  "repository": "https://github.com/Nyaitter/Client",
-  "api_url": "/server",
+  "repository": "https://github.com/nyantorusabu/Client",
+  "api_url": "https://api.nyaitter.jp",
   "nyaitter_js": "latest"
 }
