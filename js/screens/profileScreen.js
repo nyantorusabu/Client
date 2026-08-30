@@ -358,7 +358,7 @@ export async function showProfileScreen(userId, subpage = 'posts', showScreenFn 
                 <h2>
                     ${getEmoji(escapeHTML(user.name))}
                     ${user.admin ? `<img src="icons/admin.png" class="admin-badge" title="NyaitterTeam">` : user.verify ? `<img src="icons/verify.png" class="verify-badge" title="認証済み">` : ''}
-                    ${getGroupBadgesHtml(user)}
+                    ${getGroupBadgesHtml(user, { maxCount: Infinity })}
                     ${user.is_imposter ? '<span class="imposter-badge" title="偽のNyaitterID">インポスター</span>' : ''}
                 </h2>
                 <div class="user-id" title="Nyaitter ID">${getNyaitterId(user)} ${user.visibility?.scid === 'public' && user.scid ? `(<a href="https://scratch.mit.edu/users/${user.scid}" class="scidlink" target="_blank" rel="noopener noreferrer">@${user.scid}</a>)` : ''}</div>
@@ -823,20 +823,19 @@ export function openProfileMenu(targetUser, triggerElement) {
 
             blockBtn.disabled = true;
             const currentUser = getCurrentUser();
-            const updatedBlock = isBlocked
-                ? (currentUser?.block || []).filter((id) => Number(id) !== Number(targetUser.id))
-                : [...(currentUser?.block || []), targetUser.id];
-            const { data: updatePayload, error } = await apiRequest('/server/api/users/me', {
-                method: 'PUT',
-                body: { block: updatedBlock },
-            });
-            if (!error) {
-                setCurrentUser(
-                    updatePayload?.user || {
-                        ...currentUser,
-                        block: updatedBlock,
-                    },
-                );
+            try {
+                const client = globalThis.NyaitterClientInstance;
+                const res = await client.users.toggleBlock(targetUser.id);
+                const nowBlocked = Boolean(res?.blocked);
+                const updatedBlock = Array.isArray(res?.block)
+                    ? res.block
+                    : (nowBlocked
+                        ? [...(currentUser?.block || []).filter((id) => Number(id) !== Number(targetUser.id)), Number(targetUser.id)]
+                        : (currentUser?.block || []).filter((id) => Number(id) !== Number(targetUser.id)));
+                setCurrentUser({
+                    ...currentUser,
+                    block: updatedBlock,
+                });
                 updateAccountData(getCurrentUser());
                 invalidateTimelinePageCache();
                 invalidateDmCaches();
@@ -844,7 +843,8 @@ export function openProfileMenu(targetUser, triggerElement) {
                 menu.remove();
                 const { router } = await import('../router.js');
                 await router();
-            } else {
+            } catch (e) {
+                console.error('ブロック操作失敗:', e);
                 showAppAlert('ブロック操作に失敗しました');
                 blockBtn.disabled = false;
             }
