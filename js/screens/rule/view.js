@@ -4,8 +4,8 @@ import { escapeHTML } from '../../utils/helpers.js';
 export function renderHeader(pageHeader) {
     if (!pageHeader) return;
     pageHeader.innerHTML = `
-        <div class="header-with-action-button">
-            <button type="button" class="back-button" onclick="history.back()" aria-label="戻る">
+        <div class="header-with-back-button">
+            <button type="button" class="header-back-btn" data-action="history-back" aria-label="戻る">
                 ${ICONS.back || '←'}
             </button>
             <h2 id="page-title">ルール</h2>

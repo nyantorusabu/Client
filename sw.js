@@ -76,15 +76,41 @@ function getSafeNotificationUrl(value) {
   }
 }
 
+function getPushFallbackIconUrl() {
+  return new URL('emoji/neko.svg', self.registration.scope || self.location.href).href;
+}
+
+function getPushBadgeUrl() {
+  return new URL('pwa-icon-192.png', self.registration.scope || self.location.href).href;
+}
+
 function getSafePushIconUrl(value) {
   try {
-    const url = new URL(value || '/pwa-icon-192.png', self.location.origin);
+    const url = new URL(value || getPushFallbackIconUrl(), self.location.origin);
     const isHttp = url.protocol === 'http:' || url.protocol === 'https:';
     const isSafeHttp = url.protocol === 'https:' || url.origin === self.location.origin;
-    return isHttp && isSafeHttp ? url.href : new URL('/pwa-icon-192.png', self.location.origin).href;
+    return isHttp && isSafeHttp ? url.href : getPushFallbackIconUrl();
   } catch (_) {
-    return new URL('/pwa-icon-192.png', self.location.origin).href;
+    return getPushFallbackIconUrl();
   }
+}
+
+async function resolvePushIconUrl(value) {
+  const fallbackUrl = getPushFallbackIconUrl();
+  const iconUrl = getSafePushIconUrl(value);
+  if (iconUrl === fallbackUrl) return fallbackUrl;
+
+  try {
+    const response = await fetch(iconUrl, {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    });
+    const contentType = response.headers.get('Content-Type') || '';
+    if (response.ok && /^image\//i.test(contentType)) return iconUrl;
+  } catch (_) {
+    // 通知表示を止めず、取得確認済みの静的アイコンへ戻す。
+  }
+  return fallbackUrl;
 }
 
 function parsePushIdentifier(value, minimum) {
@@ -185,22 +211,24 @@ self.addEventListener('push', (event) => {
     payload = { body: event.data ? event.data.text() : '' };
   }
 
-  const title = String(payload.title || 'Nyaitter').slice(0, 80);
-  const iconUrl = getSafePushIconUrl(payload.icon);
-  const options = {
-    body: String(payload.body || '新しい通知があります').slice(0, 240),
-    icon: iconUrl,
-    badge: '/pwa-icon-192.png',
-    tag: String(payload.tag || 'nyaitter-notification').slice(0, 64),
-    renotify: false,
-    data: {
-      url: getSafeNotificationUrl(payload.url),
-      userId: payload.user_id || null,
-      notificationId: payload.notification_id || null,
-    },
-  };
+  event.waitUntil((async () => {
+    const title = String(payload.title || 'Nyaitter').slice(0, 80);
+    const iconUrl = await resolvePushIconUrl(payload.icon);
+    const options = {
+      body: String(payload.body || '').slice(0, 240),
+      icon: iconUrl,
+      badge: getPushBadgeUrl(),
+      tag: String(payload.tag || 'nyaitter-notification').slice(0, 64),
+      renotify: false,
+      data: {
+        url: getSafeNotificationUrl(payload.url),
+        userId: payload.user_id || null,
+        notificationId: payload.notification_id || null,
+      },
+    };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+    await self.registration.showNotification(title, options);
+  })());
 });
 
 self.addEventListener('notificationclick', (event) => {
