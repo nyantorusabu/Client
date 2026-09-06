@@ -478,6 +478,21 @@ export function getSafeHttpUrl(value) {
     }
 }
 
+export function getSafeConfiguredFileUrl(value) {
+    if (typeof value !== 'string' || !value.trim()) return '';
+    const normalized = value.trim();
+    if (/^https?:\/\//i.test(normalized)) return getSafeHttpUrl(normalized);
+    if (
+        normalized.startsWith('/') &&
+        !normalized.startsWith('//') &&
+        !normalized.includes('..') &&
+        !/[\u0000-\u001F\u007F"'<>]/.test(normalized)
+    ) {
+        return normalized;
+    }
+    return '';
+}
+
 export function getAttachmentImagePreviewUrl(url) {
     const safeUrl = getSafeHttpUrl(url);
     if (!safeUrl) return '';
@@ -643,7 +658,8 @@ export function getUserIconUrl(user) {
             return getSafeHttpUrl(iconData) || '/emoji/neko.svg';
         }
         const configuredUrl = globalThis.NyaitterClientConfig?.userFileUrl?.(iconData);
-        if (configuredUrl) return configuredUrl;
+        const safeConfiguredUrl = getSafeConfiguredFileUrl(configuredUrl);
+        if (safeConfiguredUrl) return safeConfiguredUrl;
     }
 
     const userId = Number(user?.id);
@@ -669,7 +685,8 @@ export function getUserHeaderImageUrl(user) {
             return getSafeHttpUrl(headerData) || '';
         }
         const configuredUrl = globalThis.NyaitterClientConfig?.userFileUrl?.(headerData);
-        if (configuredUrl) return configuredUrl;
+        const safeConfiguredUrl = getSafeConfiguredFileUrl(configuredUrl);
+        if (safeConfiguredUrl) return safeConfiguredUrl;
     }
     return '';
 }
@@ -766,7 +783,8 @@ export function getGroupIconUrl(value) {
         if (/^data:image\//i.test(image)) return image;
         if (/^https?:\/\//i.test(image)) return getSafeHttpUrl(image) || image;
         const configuredUrl = globalThis.NyaitterClientConfig?.userFileUrl?.(image);
-        if (typeof configuredUrl === 'string' && configuredUrl) return configuredUrl;
+        const safeConfiguredUrl = getSafeConfiguredFileUrl(configuredUrl);
+        if (safeConfiguredUrl) return safeConfiguredUrl;
     }
     const groupId = typeof value === 'object' && value !== null ? value.id : null;
     if (groupId) {

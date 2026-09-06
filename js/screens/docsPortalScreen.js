@@ -1,6 +1,6 @@
 import { DOM } from '../dom.js';
 import { ICONS } from '../icons.js';
-import { escapeHTML, showLoading } from '../utils/helpers.js';
+import { escapeHTML, getSafeConfiguredFileUrl, showLoading } from '../utils/helpers.js';
 import { showScreenCompat } from '../screenManager.js';
 
 let cachedDocuments = null;
@@ -34,8 +34,12 @@ function renderPortalList(documents) {
         return;
     }
 
-    listContainer.innerHTML = filtered.map((doc) => `
-        <a href="${escapeHTML(doc.url)}" class="docs-portal-item" ${doc.isExternal ? 'target="_blank" rel="noopener noreferrer"' : ''}>
+    listContainer.innerHTML = filtered.map((doc) => {
+        const rawUrl = typeof doc.url === 'string' ? doc.url.trim() : '';
+        const safeUrl = getSafeConfiguredFileUrl(rawUrl) || '#';
+        const isExternal = /^https?:\/\//i.test(safeUrl);
+        return `
+        <a href="${escapeHTML(safeUrl)}" class="docs-portal-item" ${isExternal ? 'target="_blank" rel="noopener noreferrer"' : ''}>
             <div class="docs-portal-item-icon">
                 ${getDocumentIcon(doc.icon)}
             </div>
@@ -46,10 +50,11 @@ function renderPortalList(documents) {
                 <p class="docs-portal-item-desc">${escapeHTML(doc.description || '')}</p>
             </div>
             <div class="docs-portal-item-arrow">
-                ${doc.isExternal ? ICONS.external_link : (ICONS.chevron_down ? `<span style="transform: rotate(-90deg); display:inline-flex;">${ICONS.chevron_down}</span>` : '→')}
+                ${isExternal ? ICONS.external_link : (ICONS.chevron_down ? `<span style="transform: rotate(-90deg); display:inline-flex;">${ICONS.chevron_down}</span>` : '→')}
             </div>
         </a>
-    `).join('');
+    `;
+    }).join('');
 }
 
 export async function showDocsPortalScreen(showScreenFn) {
