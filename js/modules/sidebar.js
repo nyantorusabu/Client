@@ -15,6 +15,7 @@ import { updateFollowButtonState, openPostModal } from './posts.js';
 import { openAccountSwitcherModal } from './auth.js';
 import {
     escapeHTML,
+    getSafeHttpUrl,
     getUserIconUrl,
     getNyaitterId,
     formatNyaitterId,
@@ -23,6 +24,14 @@ import {
 } from '../utils/helpers.js';
 
 const { widgetLinks: WIDGET_LINKS } = globalThis.NyaitterClientConfig || {};
+
+function getSafeWidgetUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw || /[\u0000-\u001F\u007F"'<>]/.test(raw)) return '#';
+    if (/^https?:\/\//i.test(raw)) return getSafeHttpUrl(raw) || '#';
+    if (raw.startsWith('/') || raw.startsWith('#')) return raw.includes('..') ? '#' : raw;
+    return '#';
+}
 
 let recommendedUsersRequest = null;
 let sidebarOverflowResizeHandler = null;
@@ -339,8 +348,9 @@ export async function loadRightSidebar() {
         DOM.rightSidebar.links.innerHTML = linkItems
             .map((item) => {
                 const name = escapeHTML(String(item?.name || 'リンク'));
-                const url = escapeHTML(String(item?.url || item?.link || '#'));
-                const external = /^https:\/\//i.test(String(item?.url || item?.link || ''));
+                const rawUrl = String(item?.url || item?.link || '#');
+                const url = escapeHTML(getSafeWidgetUrl(rawUrl));
+                const external = /^https:\/\//i.test(rawUrl);
                 return `<a href="${url}" class="link"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${name}</a>`;
             })
             .join('');

@@ -1,6 +1,6 @@
 import { DOM } from '../../dom.js';
 import { ICONS } from '../../icons.js';
-import { escapeHTML } from '../../utils/helpers.js';
+import { escapeHTML, getSafeConfiguredFileUrl } from '../../utils/helpers.js';
 
 const GROUP_VISIBILITY_LABELS = {
     open: 'Open',
@@ -10,9 +10,12 @@ const GROUP_VISIBILITY_LABELS = {
 function getGroupImageUrl(value) {
     const image = typeof value === 'string' ? value.trim() : '';
     if (!image) return '';
-    if (/^data:image\//i.test(image) || /^https?:\/\//i.test(image)) return image;
+    if (/^data:image\/(?:jpeg|png|gif|webp);base64,[a-z0-9+/]+=*$/i.test(image)) return image;
+    if (/^https?:\/\/[^\s"'<>]+$/i.test(image)) return getSafeConfiguredFileUrl(image);
     const configuredUrl = globalThis.NyaitterClientConfig?.userFileUrl?.(image);
-    return typeof configuredUrl === 'string' ? configuredUrl : image;
+    const safeConfiguredUrl = getSafeConfiguredFileUrl(configuredUrl);
+    if (safeConfiguredUrl) return safeConfiguredUrl;
+    return /^attachments\/[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(image) && !image.includes('..') ? image : '';
 }
 
 export function renderSearchHeader(query, tab, title) {
@@ -21,7 +24,7 @@ export function renderSearchHeader(query, tab, title) {
             ${ICONS.explore}
             <input type="search" id="search-input" placeholder="検索">
         </div>
-        <h2 id="page-title">検索結果: "${title}"</h2>
+        <h2 id="page-title">検索結果: "${escapeHTML(title)}"</h2>
         <div class="search-tabs" id="search-tabs-container">
             <button class="tab-button ${tab === 'posts' ? 'active' : ''}" data-search-tab="posts">ポスト</button>
             <button class="tab-button ${tab === 'users' ? 'active' : ''}" data-search-tab="users">ユーザー</button>

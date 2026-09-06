@@ -4,7 +4,7 @@ import { getCurrentUser } from '../state.js';
 import { loadPostsWithPagination } from '../modules/pagination.js';
 import { uploadFileViaEdgeFunction, deleteFilesViaEdgeFunction } from '../modules/posts.js';
 import { initTabGroup } from '../modules/tabSwipe.js';
-import { escapeHTML, getNyaitterId, getUserIconUrl, showAppAlert, showAppConfirm, showLoading } from '../utils/helpers.js';
+import { escapeHTML, getNyaitterId, getSafeConfiguredFileUrl, getUserIconUrl, showAppAlert, showAppConfirm, showLoading } from '../utils/helpers.js';
 import { showScreenCompat } from '../screenManager.js';
 
 const VISIBILITY_LABELS = {
@@ -98,9 +98,12 @@ function visibilityOptions(selected = 'open') {
 function getGroupImageUrl(value) {
     const image = typeof value === 'string' ? value.trim() : '';
     if (!image) return '';
-    if (/^data:image\//i.test(image) || /^https?:\/\//i.test(image)) return image;
+    if (/^data:image\/(?:jpeg|png|gif|webp);base64,[a-z0-9+/]+=*$/i.test(image)) return image;
+    if (/^https?:\/\/[^\s"'<>]+$/i.test(image)) return getSafeConfiguredFileUrl(image);
     const configuredUrl = globalThis.NyaitterClientConfig?.userFileUrl?.(image);
-    return typeof configuredUrl === 'string' ? configuredUrl : image;
+    const safeConfiguredUrl = getSafeConfiguredFileUrl(configuredUrl);
+    if (safeConfiguredUrl) return safeConfiguredUrl;
+    return /^attachments\/[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(image) && !image.includes('..') ? image : '';
 }
 
 function groupAvatar(group, className = 'group-ui-avatar') {
