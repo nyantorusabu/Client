@@ -4,7 +4,7 @@
 //   import { createNapPage } from './nap-page.js';
 //   const page = createNapPage({
 //       source: '<所有者>/<リポジトリ>',
-//       rawBase: 'https://cdn.nyaitter.jp',   // 任意。CDN 経由にする場合
+//       rawBase: 'https://cdn.nyaitter.jp',   // 任意。既定はこの CDN
 //       currentVersionId: '<今の版ID>',        // 任意
 //   });
 //   const { hasUpdate, latest } = await page.checkUpdate();
@@ -54,7 +54,7 @@ function flattenInto(out, prefix, result) {
 }
 
 export function createNapPage(options = {}) {
-    const { source, rawBase, client: givenClient, fetch: fetchImpl, cache } = options;
+    const { source, rawBase = 'https://cdn.nyaitter.jp', client: givenClient, fetch: fetchImpl, cache } = options;
     if (!source) {
         throw new Error('source が必要です。<所有者>/<リポジトリ> の形で指定してください。');
     }
@@ -83,8 +83,8 @@ export function createNapPage(options = {}) {
     }
 
     // 版を取得して照合する。ref は版ID・版ID-ラベル・版コードのいずれか。
-    async function fetchVersion(ref) {
-        return client.fetchVersion(source, ref);
+    async function fetchVersion(ref, options) {
+        return client.fetchVersion(source, ref, options);
     }
 
     async function fetchLatest() {
