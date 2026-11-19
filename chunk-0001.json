@@ -195,5 +195,13 @@
     "at": "2026-11-19T09:21:54.091Z",
     "source": "26eba79942418e6cea8e3a36636adbc6366af3fd",
     "code": "e0z"
+  },
+  {
+    "id": "cb94f320096943a24cb034c493fb1a9b99960be0a7808bd39bf2febbe3c5ee14",
+    "commit": "ae452231e6d128fedcabb1885a31c1ca630bc6cc",
+    "at": "2026-11-19T11:11:44.991Z",
+    "tag": "Beta-2",
+    "source": "32f457a225e647952c501a60bac27a85f2b2b78f",
+    "code": "52n"
   }
 ]
