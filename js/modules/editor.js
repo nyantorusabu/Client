@@ -170,9 +170,9 @@ function getRenderedUnicodeEmojiSource(node) {
 
 function getRenderedMentionSource(node) {
     if (!(node instanceof Element) || node.tagName !== 'A') return null;
-    if (node.classList.contains('hashtag-mention')) return null;
     const match = /^#profile\/(\d+)$/.exec(node.getAttribute('href') || '');
-    return match ? `@${match[1]}` : null;
+    if (!match) return null;
+    return node.classList.contains('hashtag-mention') ? `#${match[1]}` : `@${match[1]}`;
 }
 
 function serializeDirectEditorNode(node) {
@@ -1484,6 +1484,20 @@ export function attachMarkdownContentEditor(editor) {
                     renderDirectContentEditor(editor, selection);
                 }
                 autoResizeMarkdownEditor(editor);
+            });
+            editor.addEventListener('click', (event) => {
+                if (!editor.isContentEditable) return;
+                if (event.target instanceof Element && event.target.closest('a')) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
+            editor.addEventListener('auxclick', (event) => {
+                if (!editor.isContentEditable) return;
+                if (event.target instanceof Element && event.target.closest('a')) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
             });
             editor.addEventListener('focus', () => autoResizeMarkdownEditor(editor));
             editor.addEventListener('blur', () => commitNyaitterImeComposition(editor));
