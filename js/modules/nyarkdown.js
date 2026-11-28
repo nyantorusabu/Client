@@ -243,7 +243,8 @@ export function renderNyarkDown(
                 const numericId = parseInt(tagName, 10);
                 const user = getCachedUser(numericId, userCache);
                 if (user) {
-                    return `<a href="#profile/${numericId}" class="hashtag-mention">#${getEmoji(tagName)}</a>`;
+                    const userName = user.name || `user${numericId}`;
+                    return `<a href="#profile/${numericId}" class="hashtag-mention">#${getEmoji(escapeHTML(userName))}</a>`;
                 }
             }
             return `<a href="#search/${encodeURIComponent(tagName)}">#${getEmoji(tagName)}</a>`;
